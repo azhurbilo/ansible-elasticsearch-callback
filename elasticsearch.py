@@ -123,6 +123,7 @@ class CallbackModule(CallbackBase):
          results['task'] = self.taskname
          #TODO : change doctype based on type of the data
          results['_type'] ="ansible-runs"
+         results['status'] = status
          results['timestamp'] =  self._getTime()
          self.run_output.append(results)
 
@@ -170,6 +171,17 @@ class CallbackModule(CallbackBase):
                 self.process_data("Skipped", result._host.get_name())
 
     def v2_playbook_on_stats(self, stats):
-        #TODO : send stats to elasticsearch
+        hosts = sorted(stats.processed.keys())
+        for h in hosts:
+            t = stats.summarize(h)
+            results = {}
+            results['hostname'] = h
+            results['ok'] = t['ok']
+            results['changed'] = t['changed']
+            results['failed'] = t['failures']
+            results['unreachable'] = t['unreachable']
+            results['_type'] = "ansible-stats"
+            self.run_output.append(results)
         self._insert()
+
 
