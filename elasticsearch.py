@@ -51,6 +51,7 @@ class CallbackModule(CallbackBase):
         ELASTICSEARCH_PORT     (optional): defaults to 9200
         ELASTICSEARCH_TIMEOUT  (optional): defaults to 3 (seconds)
         ELASTICSEARCH_INDEX    (optional): defaults to 3 ansible_logs
+        ELASTICSEARCH_DOC_ARGS (optional): Addtional json key-value pair(e.g. {"bar":"abc", "foo":"def"}) to be stored in each document
     """
     CALLBACK_VERSION = 2.0
     CALLBACK_TYPE = 'notification'
@@ -72,6 +73,9 @@ class CallbackModule(CallbackBase):
         #Optional environment variables
         self.elasticsearch_host = os.getenv('ELASTICSEARCH_SERVER','localhost')
         self.elasticsearch_port = os.getenv('ELASTICSEARCH_PORT', 9200)
+        self.args = os.getenv('ELASTICSEARCH_DOC_ARGS')
+        if self.args is not None:
+            self.args = json.loads(self.args)
         self.timeout = os.getenv('ELASTICSEARCH_TIMEOUT', 3)
         self.index_name = os.getenv('ELASTICSEARCH_INDEX', "ansible_logs") + "-"+ time.strftime('%Y.%m.%d')  # ES index name one per day
 
@@ -125,6 +129,8 @@ class CallbackModule(CallbackBase):
          results['_type'] ="ansible-runs"
          results['status'] = status
          results['timestamp'] =  self._getTime()
+         if self.args is not None:
+            results.update(self.args)
          self.run_output.append(results)
 
     def v2_runner_on_ok(self, result):
@@ -181,6 +187,8 @@ class CallbackModule(CallbackBase):
             results['failed'] = t['failures']
             results['unreachable'] = t['unreachable']
             results['_type'] = "ansible-stats"
+            if self.args is not None:
+                results.update(self.args)
             self.run_output.append(results)
         self._insert()
 
