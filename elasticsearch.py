@@ -120,15 +120,14 @@ class CallbackModule(CallbackBase):
         return False
 
 
-    def process_data(self, status, hostname,other=None):
+    def process_data(self, status, hostname,other=None, doc_type="ansible-runs"):
          results = {}
          results['hostname'] = hostname
          results['play'] = self.playname
          results['task'] = self.taskname
-         #TODO : change doctype based on type of the data
-         results['_type'] ="ansible-runs"
          results['status'] = status
          results['timestamp'] =  self._getTime()
+         results['_type'] = doc_type
          if self.args is not None:
             results.update(self.args)
          self.run_output.append(results)
@@ -156,7 +155,7 @@ class CallbackModule(CallbackBase):
         if 'exception' in result._result:
             error = result._result['exception'].strip().split('\n')[-1]
             results['error'] = error
-        self.process_data("Failed", result._host.get_name(),results)
+        self.process_data("Failed", result._host.get_name(),results,"ansible-failures")
 
     def v2_runner_on_unreachable(self, result):
         self.process_data("Unreachable", result._host.get_name())
